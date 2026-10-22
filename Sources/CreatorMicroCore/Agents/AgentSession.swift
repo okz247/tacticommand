@@ -18,6 +18,7 @@ public struct AgentSessionID: Codable, Equatable, Hashable, Sendable {
 
 public enum AgentFocusCapability: String, CaseIterable, Codable, Hashable, Sendable {
     case codexThread
+    case claudeDesktopSession
     case application
     case window
     case terminal
@@ -26,6 +27,9 @@ public enum AgentFocusCapability: String, CaseIterable, Codable, Hashable, Senda
 
 public enum AgentFocusTarget: Codable, Equatable, Hashable, Sendable {
     case codexThread(threadID: String)
+    /// A Claude Code session running in the Claude desktop app, identified by its
+    /// transcript session ID (the `sessionId` in its JSONL file).
+    case claudeDesktopSession(sessionID: String)
     case application(bundleIdentifier: String)
     case window(bundleIdentifier: String, title: String?)
     case terminal(bundleIdentifier: String, workingDirectory: String?)
@@ -34,6 +38,7 @@ public enum AgentFocusTarget: Codable, Equatable, Hashable, Sendable {
     public var capability: AgentFocusCapability {
         switch self {
         case .codexThread: .codexThread
+        case .claudeDesktopSession: .claudeDesktopSession
         case .application: .application
         case .window: .window
         case .terminal: .terminal

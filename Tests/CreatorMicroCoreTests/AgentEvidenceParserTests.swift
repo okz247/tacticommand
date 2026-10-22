@@ -90,6 +90,45 @@ final class AgentEvidenceParserTests: XCTestCase {
         XCTAssertEqual(result.session.status, .complete)
     }
 
+    func testClaudeDesktopSessionFocusesTheDesktopSessionAndKeepsItsStatus() throws {
+        let data = try fixture(named: "claude-desktop.jsonl")
+        let context = AgentEvidenceContext(
+            isLive: false,
+            observedAt: date("2026-09-10T14:00:00Z"),
+            terminalBundleIdentifier: ""
+        )
+
+        let result = try ClaudeSessionEvidenceParser().parse(data, context: context)
+
+        XCTAssertEqual(result.session.title, "Pad setup")
+        XCTAssertEqual(result.session.status, .working)
+        XCTAssertEqual(
+            result.session.focusTarget,
+            .claudeDesktopSession(sessionID: "desktop-cli-1")
+        )
+        XCTAssertEqual(result.session.focusTarget?.capability, .claudeDesktopSession)
+    }
+
+    func testClaudeTerminalSessionStillRequiresLivenessAndTerminalFocus() throws {
+        let data = try fixture(named: "claude-waiting.jsonl")
+        let context = AgentEvidenceContext(
+            isLive: false,
+            observedAt: date("2026-09-10T14:00:00Z"),
+            terminalBundleIdentifier: "com.mitchellh.ghostty"
+        )
+
+        let result = try ClaudeSessionEvidenceParser().parse(data, context: context)
+
+        XCTAssertEqual(result.session.status, .unavailable)
+        XCTAssertEqual(
+            result.session.focusTarget,
+            .terminal(
+                bundleIdentifier: "com.mitchellh.ghostty",
+                workingDirectory: "/Users/example/Projects/release"
+            )
+        )
+    }
+
     func testProcessParserDoesNotInventActivityForConfiguredExecutables() throws {
         let data = try fixture(named: "processes.txt")
         let parser = AgentProcessEvidenceParser(

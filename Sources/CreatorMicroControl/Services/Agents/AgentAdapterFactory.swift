@@ -50,6 +50,7 @@ private enum AgentAdapterDefaults {
         "com.apple.Terminal",
         "com.googlecode.iterm2",
         "dev.warp.Warp-Stable",
+        "com.mitchellh.ghostty",
     ]
 
     static let localAgentExecutables: Set<String> = [

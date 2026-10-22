@@ -52,12 +52,34 @@ public struct ClaudeSessionEvidenceParser: AgentSessionEvidenceParsing {
                 fallback: "Claude"
             ),
             detail: identity.workingDirectory,
-            status: statusWithLiveness(status, isLive: context.isLive),
+            status: sessionStatus(status, identity: identity, context: context),
             updatedAt: updatedAt,
-            focusTarget: terminalFocusTarget(
-                bundleIdentifier: context.terminalBundleIdentifier,
-                workingDirectory: identity.workingDirectory
-            )
+            focusTarget: focusTarget(id: id, identity: identity, context: context)
+        )
+    }
+
+    /// The Claude desktop app writes its Code tab transcripts without keeping them open,
+    /// so open-file liveness never holds for them. The adapter's recency window bounds
+    /// how long their last reported status is shown instead.
+    private func sessionStatus(
+        _ status: AgentStatus,
+        identity: ClaudeIdentity,
+        context: AgentEvidenceContext
+    ) -> AgentStatus {
+        identity.isDesktopSession ? status : statusWithLiveness(status, isLive: context.isLive)
+    }
+
+    private func focusTarget(
+        id: String,
+        identity: ClaudeIdentity,
+        context: AgentEvidenceContext
+    ) -> AgentFocusTarget? {
+        if identity.isDesktopSession {
+            return .claudeDesktopSession(sessionID: id)
+        }
+        return terminalFocusTarget(
+            bundleIdentifier: context.terminalBundleIdentifier,
+            workingDirectory: identity.workingDirectory
         )
     }
 
@@ -88,19 +110,34 @@ public struct ClaudeSessionEvidenceParser: AgentSessionEvidenceParsing {
 }
 
 private struct ClaudeIdentity {
+    static let desktopEntrypoint = "claude-desktop"
+
     var id: String?
-    var title: String?
+    var aiTitle: String?
+    var customTitle: String?
     var workingDirectory: String?
+    var isDesktopSession = false
+
+    /// A title the user (or the desktop app) set explicitly wins over the AI-generated one.
+    var title: String? {
+        customTitle ?? aiTitle
+    }
 
     mutating func consume(_ record: ClaudeRecord) {
         if let sessionID = record.sessionID, !sessionID.isEmpty {
             id = sessionID
         }
         if record.type == "ai-title", let aiTitle = record.aiTitle {
-            title = aiTitle
+            self.aiTitle = aiTitle
+        }
+        if record.type == "custom-title", let customTitle = record.customTitle, !customTitle.isEmpty {
+            self.customTitle = customTitle
         }
         if let cwd = record.workingDirectory, !cwd.isEmpty {
             workingDirectory = cwd
+        }
+        if record.entrypoint == Self.desktopEntrypoint {
+            isDesktopSession = true
         }
     }
 }
@@ -111,6 +148,8 @@ private struct ClaudeRecord: Decodable {
     let timestamp: String?
     let workingDirectory: String?
     let aiTitle: String?
+    let customTitle: String?
+    let entrypoint: String?
     let message: Message?
 
     struct Message: Decodable {
@@ -135,6 +174,8 @@ private struct ClaudeRecord: Decodable {
         case timestamp
         case workingDirectory = "cwd"
         case aiTitle
+        case customTitle
+        case entrypoint
         case message
     }
 
@@ -150,6 +191,8 @@ private struct ClaudeRecord: Decodable {
             forKey: .workingDirectory
         )
         aiTitle = try container.decodeIfPresent(String.self, forKey: .aiTitle)
+        customTitle = try container.decodeIfPresent(String.self, forKey: .customTitle)
+        entrypoint = try container.decodeIfPresent(String.self, forKey: .entrypoint)
         message =
             type == "assistant"
             ? try container.decodeIfPresent(Message.self, forKey: .message)

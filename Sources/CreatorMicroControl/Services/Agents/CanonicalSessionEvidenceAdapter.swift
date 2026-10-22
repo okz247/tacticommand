@@ -6,6 +6,7 @@ actor CanonicalSessionEvidenceAdapter<Parser: AgentSessionEvidenceParsing>:
 {
     nonisolated let source: AgentSource
     nonisolated let focusCapabilities: Set<AgentFocusCapability> = [
+        .claudeDesktopSession,
         .application,
         .window,
         .terminal,

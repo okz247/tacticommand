@@ -7,8 +7,12 @@ protocol AgentFocusControlling: Sendable {
 }
 
 struct MacAgentFocusController: AgentFocusControlling {
+    var desktopSessionLocator = ClaudeDesktopSessionLocator()
+
     func focus(_ target: AgentFocusTarget) async throws {
         switch target {
+        case .claudeDesktopSession(let sessionID):
+            try await focusClaudeDesktopSession(transcriptSessionID: sessionID)
         case .application(let bundleIdentifier):
             try await activate(bundleIdentifier: bundleIdentifier)
         case .window(let bundleIdentifier, let title):
@@ -22,10 +26,16 @@ struct MacAgentFocusController: AgentFocusControlling {
             }
         case .terminal(let bundleIdentifier, let workingDirectory):
             if let workingDirectory, !workingDirectory.isEmpty {
-                try await raiseWindow(
-                    bundleIdentifier: bundleIdentifier,
-                    hint: workingDirectory
-                )
+                do {
+                    try await raiseWindow(
+                        bundleIdentifier: bundleIdentifier,
+                        hint: workingDirectory
+                    )
+                } catch {
+                    // Some terminals (e.g. Ghostty) title windows without the full path;
+                    // bringing the terminal forward is still better than doing nothing.
+                    try await activate(bundleIdentifier: bundleIdentifier)
+                }
             } else {
                 try await activate(bundleIdentifier: bundleIdentifier)
             }
@@ -33,6 +43,28 @@ struct MacAgentFocusController: AgentFocusControlling {
             try await activate(processIdentifier: processIdentifier)
         case .codexThread:
             throw AgentFocusError.unsupportedTarget
+        }
+    }
+
+    /// Opens the exact Code tab session when the desktop app's record for it is found,
+    /// otherwise brings the Claude app forward.
+    private func focusClaudeDesktopSession(transcriptSessionID: String) async throws {
+        let desktopSessionID = desktopSessionLocator.desktopSessionID(
+            forCLISessionID: transcriptSessionID
+        )
+        if let desktopSessionID,
+            let url = ClaudeDesktopSessionLocator.continueURL(forDesktopSessionID: desktopSessionID)
+        {
+            try await open(url)
+        } else {
+            try await activate(bundleIdentifier: ClaudeDesktopSessionLocator.applicationBundleIdentifier)
+        }
+    }
+
+    @MainActor
+    private func open(_ url: URL) throws {
+        guard NSWorkspace.shared.open(url) else {
+            throw AgentFocusError.activationFailed
         }
     }
 
