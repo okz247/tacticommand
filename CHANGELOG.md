@@ -19,6 +19,7 @@ All notable changes to TactiCommand are documented here.
 - Consolidated semantic and agent-status lighting into unified `keyAppearance` contract instead of separate payload branches.
 
 ### Changed
+- Creator Micro 2 now honors "Use two separate keys": with it on, the two microphone switches (`AG10`/`AG11`) show, route, and light as separate keys for units with two keycaps; with it off they act as one wide key. The setting defaults to on, so wide-keycap owners should turn it off.
 - `AppModelLighting.synchronizeLighting()` now sends unified `keyLightingPayload()` routed by actual device capability.
 - `MicroMessageParser` reduced from 180 to ~155 lines; alias rotation and press/release state properly separated.
 

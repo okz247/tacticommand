@@ -129,12 +129,14 @@ depending on the rede application.
   clockwise / counter-clockwise / press. `kb.radial` is a joystick alias;
   its hide operation releases the stick even if the last distance is nonzero.
 - Lighting capability is model-driven: Creator Micro 2 individually addresses
-  all 13 LED positions (the wide microphone switch spans two of them); Codex
+  all 13 LED positions (a wide microphone keycap spans two of them); Codex
   individually addresses its six Agent keys and uses one shared zone for the
   rest. An unrecognized model gets the conservative Agent-only addressing and
   no assumed full-RGB layout.
 - The wide microphone cap may actuate both `ACT10` and `ACT11`; linked mode must
-  emit one logical action.
+  emit one logical action. Some Creator units have two separate keycaps over
+  those switches; in separate mode each switch routes and lights as its own
+  control.
 - Creator firmware's `device.status.layer_index` is one-based and selects the
   onboard keymap layer for explicit setup. It does not select an app software
   layer. The meaning of that value for unrelated firmware is not assumed.

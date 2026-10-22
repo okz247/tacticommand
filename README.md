@@ -91,11 +91,15 @@ to avoid duplicate host input. Other device layers can retain their bindings.
 These device layers are separate from TactiCommand's software layers.
 
 TactiCommand addresses lighting by the connected model's real capability.
-Creator Micro 2 individually lights all 13 LED positions (its wide
-microphone switch spans two of them); Codex Micro individually lights its six
-Agent keys and uses one shared zone for the rest. Colors always reflect each
-individually addressable key's actual function or live state. Codex's shared
-action zone cannot display a different color for each action key.
+Creator Micro 2 individually lights all 13 LED positions. A wide microphone
+keycap spans two of them; some units instead have two separate keycaps over the
+microphone switches. Select either microphone switch and turn on "Use two
+separate keys" in the inspector so each switch has its own action and light;
+turn it off for a wide keycap so both switches act as one key. Codex Micro
+individually lights its six Agent keys and uses one shared zone for the rest.
+Colors always reflect each individually addressable key's actual function or
+live state. Codex's shared action zone cannot display a different color for
+each action key.
 
 Creator lighting feedback sends only changed LED threads between full connection
 snapshots, prioritizing key feedback over ambient changes. This avoids replaying
