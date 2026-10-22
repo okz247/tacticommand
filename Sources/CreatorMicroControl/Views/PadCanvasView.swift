@@ -90,8 +90,8 @@ struct PadCanvasView: View {
 
     @ViewBuilder
     private var microphoneControls: some View {
-        if model.capabilityProfile.wideKeyPair != nil {
-            // Creator's microphone switches share one physical wide cap: only action10
+        if model.activeWideKeyPair != nil {
+            // Linked Creator microphone switches share one physical wide cap: only action10
             // is reachable, and its label reflects whatever action is actually bound to
             // it (never a hardcoded "DICTATE"). action11's saved binding is preserved
             // untouched for when the same configuration connects to a 6-key device.
@@ -101,9 +101,16 @@ struct PadCanvasView: View {
             case .linked:
                 MicroKey(control: .action10, model: model, width: 142)
             case .separate:
+                // Codex Micro keeps its fixed MIC/APPROVE legends. A Creator with two
+                // separate keycaps shows each key's actually bound action instead.
+                let isCreator = model.capabilityProfile.wideKeyPair != nil
                 HStack(spacing: 6) {
-                    MicroKey(control: .action10, model: model, width: 68, labelOverride: "MIC")
-                    MicroKey(control: .action11, model: model, width: 68, labelOverride: "APPROVE")
+                    MicroKey(
+                        control: .action10, model: model, width: 68,
+                        labelOverride: isCreator ? nil : "MIC")
+                    MicroKey(
+                        control: .action11, model: model, width: 68,
+                        labelOverride: isCreator ? nil : "APPROVE")
                 }
             }
         }

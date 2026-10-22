@@ -9,7 +9,7 @@ final class AppModelLightingFeedbackTests: XCTestCase {
     func testCreatorWideCapRoutesOnceAndOnlyReleasesAfterBothPositions() {
         let model = makeModel()
         model.deviceIdentity = DeviceIdentitySnapshot(transport: .usb, productIdentifier: 0x8298)
-        model.configuration.microphoneLayout = .separate
+        model.configuration.microphoneLayout = .linked
         model.configuration.assign(action: .copy, to: .action10, on: model.activeLayer)
         model.configuration.assign(action: .openTerminal, to: .action11, on: model.activeLayer)
         model.configureRuntimeRouter()
@@ -20,9 +20,26 @@ final class AppModelLightingFeedbackTests: XCTestCase {
         XCTAssertEqual(
             model.runtimeRouter.route(input(.action11, .released), on: model.selectedLayer),
             [.init(action: .copy, phase: .released)])
-        XCTAssertEqual(model.configuration.microphoneLayout, .separate)
+        XCTAssertEqual(model.configuration.microphoneLayout, .linked)
         XCTAssertEqual(model.selectedLayer.action(for: .action11), .openTerminal)
         XCTAssertEqual(model.keyAppearance(for: .action10), model.keyAppearance(for: .action11))
+    }
+
+    func testCreatorWithTwoSeparateKeycapsRoutesEachSwitchIndependently() {
+        let model = makeModel()
+        model.deviceIdentity = DeviceIdentitySnapshot(transport: .usb, productIdentifier: 0x8298)
+        model.configuration.microphoneLayout = .separate
+        model.configuration.assign(action: .copy, to: .action10, on: model.activeLayer)
+        model.configuration.assign(action: .openTerminal, to: .action11, on: model.activeLayer)
+        model.configureRuntimeRouter()
+        XCTAssertNil(model.activeWideKeyPair)
+        XCTAssertEqual(
+            model.runtimeRouter.route(input(.action10, .pressed), on: model.selectedLayer),
+            [.init(action: .copy, phase: .pressed)])
+        XCTAssertEqual(
+            model.runtimeRouter.route(input(.action11, .pressed), on: model.selectedLayer),
+            [.init(action: .openTerminal, phase: .pressed)])
+        XCTAssertNotEqual(model.keyAppearance(for: .action10), model.keyAppearance(for: .action11))
     }
 
     func testCodexKeepsSeparateSavedActions() {

@@ -2,20 +2,27 @@ import CreatorMicroCore
 import Foundation
 
 extension AppModel {
+    /// The two microphone switches act as one wide key only while the user keeps them
+    /// linked. With "Use two separate keys" on (for example, two 1U keycaps fitted over
+    /// the switches), each switch is an independent key on every model.
+    var activeWideKeyPair: [ControlID]? {
+        configuration.microphoneLayout == .linked ? capabilityProfile.wideKeyPair : nil
+    }
+
     func canonicalControl(_ control: ControlID) -> ControlID {
-        capabilityProfile.wideKeyPair?.contains(control) == true ? .action10 : control
+        activeWideKeyPair?.contains(control) == true ? .action10 : control
     }
 
     func configureRuntimeRouter() {
         runtimeRouter = MicroRuntimeRouter(
-            microphoneLayout: capabilityProfile.wideKeyPair != nil
+            microphoneLayout: activeWideKeyPair != nil
                 ? .linked : configuration.microphoneLayout)
     }
 
     func recordLightingInput(_ input: MicroInputEvent, routed: [RoutedCreatorAction]) {
         let control = canonicalControl(input.control)
         let now = ContinuousClock().now
-        let isWide = capabilityProfile.wideKeyPair?.contains(input.control) == true
+        let isWide = activeWideKeyPair?.contains(input.control) == true
         if isWide && routed.isEmpty { return }
         switch input.phase {
         case .pressed: lightingFeedback.press(control, at: now)
